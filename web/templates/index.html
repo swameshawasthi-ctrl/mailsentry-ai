@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailSentry AI — Autonomous Threat Forensics SOC</title>
+    <meta name="description" content="Enterprise Email Threat Forensics and Typosquatting Investigation Platform powered by Fetch.ai & ASI:One.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-theme">
+    <!-- Ambient Background Glow -->
+    <div class="ambient-glow cyan"></div>
+    <div class="ambient-glow purple"></div>
+
+    <!-- Navigation Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="m9 12 2 2 4-4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-title">MAILSENTRY <span class="highlight">AI</span></h1>
+                    <span class="brand-subtitle">Autonomous Threat Investigation Sentinel</span>
+                </div>
+            </div>
+
+            <div class="network-badge">
+                <span class="status-indicator pulse-green"></span>
+                <span class="badge-text">Fetch.ai & ASI:One Network: <strong>ACTIVE</strong></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Container -->
+    <main class="dashboard-grid">
+        <!-- Metric KPI Cards -->
+        <section class="kpi-row" aria-label="Security Metrics">
+            <div class="kpi-card" id="kpi-total">
+                <div class="kpi-header">
+                    <span class="kpi-title">TOTAL EMAILS ANALYZED</span>
+                    <span class="kpi-icon">📊</span>
+                </div>
+                <div class="kpi-value" id="stat-total">0</div>
+                <div class="kpi-footer">Autonomous toolchains executed</div>
+            </div>
+
+            <div class="kpi-card danger" id="kpi-critical">
+                <div class="kpi-header">
+                    <span class="kpi-title">INTERCEPTED THREATS</span>
+                    <span class="kpi-icon">🚫</span>
+                </div>
+                <div class="kpi-value text-danger" id="stat-critical">0</div>
+                <div class="kpi-footer">Phishing & Credential Harvests</div>
+            </div>
+
+            <div class="kpi-card success" id="kpi-safe">
+                <div class="kpi-header">
+                    <span class="kpi-title">LEGITIMATE VERIFIED</span>
+                    <span class="kpi-icon">🛡️</span>
+                </div>
+                <div class="kpi-value text-success" id="stat-safe">0</div>
+                <div class="kpi-footer">Baseline legitimate emails</div>
+            </div>
+
+            <div class="kpi-card highlight" id="kpi-rate">
+                <div class="kpi-header">
+                    <span class="kpi-title">INTERCEPTION RATE</span>
+                    <span class="kpi-icon">⚡</span>
+                </div>
+                <div class="kpi-value text-accent" id="stat-rate">0%</div>
+                <div class="kpi-footer">Proactive detection efficacy</div>
+            </div>
+        </section>
+
+        <!-- Threat Analyzer Section -->
+        <section class="analyzer-section glass-panel">
+            <div class="panel-header">
+                <h2>🔍 Autonomous Email Threat Scanner</h2>
+                <div class="quick-samples">
+                    <span class="samples-label">Load Test Scenario:</span>
+                    <button class="btn btn-secondary btn-sm" id="btn-load-phish">⚠️ Sample Phishing</button>
+                    <button class="btn btn-secondary btn-sm" id="btn-load-clean">✅ Sample Clean</button>
+                    <button class="btn btn-secondary btn-sm" id="btn-load-headers">🕵️ Raw RFC Headers</button>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <textarea 
+                    id="email-input" 
+                    placeholder="Paste suspicious email text, RFC headers, or forwarded message here for autonomous multi-tool investigation..." 
+                    rows="8"
+                ></textarea>
+            </div>
+
+            <div class="analyzer-actions">
+                <button class="btn btn-primary" id="btn-analyze">
+                    <span class="btn-icon">⚡</span> Run Multi-Tool Forensics
+                </button>
+                <button class="btn btn-ghost" id="btn-clear">Clear Input</button>
+                <div class="engine-indicator">
+                    <span>Dual Engine:</span>
+                    <span class="chip">Domain Typosquatting</span>
+                    <span class="chip">DNS MX Validation</span>
+                    <span class="chip">ASI:One LLM</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Investigation Results Display (Initially Hidden) -->
+        <section class="results-section glass-panel" id="results-panel" style="display: none;">
+            <div class="panel-header">
+                <h2>🛡️ Forensic Security Assessment</h2>
+                <button class="btn btn-secondary btn-sm" id="btn-export-report">📥 Export JSON Report</button>
+            </div>
+
+            <div class="results-layout">
+                <!-- Radial Threat Meter -->
+                <div class="threat-meter-card">
+                    <div class="gauge-container">
+                        <svg class="radial-gauge" viewBox="0 0 120 120">
+                            <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+                            <circle class="gauge-fill" id="gauge-progress" cx="60" cy="60" r="50"></circle>
+                        </svg>
+                        <div class="gauge-content">
+                            <span class="gauge-score" id="res-score">0</span>
+                            <span class="gauge-max">/ 100</span>
+                        </div>
+                    </div>
+                    <div class="threat-badge-container">
+                        <span class="threat-pill" id="res-threat-level">ANALYZING...</span>
+                    </div>
+                    <div class="attack-category-label" id="res-category">Credential Harvesting</div>
+                </div>
+
+                <!-- Forensic Findings Breakdown -->
+                <div class="findings-card">
+                    <div class="findings-header">
+                        <h3>Forensic Evidence Discovered</h3>
+                        <span class="chip" id="res-sender">Sender: Unknown</span>
+                    </div>
+                    <ul class="evidence-list" id="res-evidence-list">
+                        <!-- Populated dynamically -->
+                    </ul>
+
+                    <div class="reasoning-box" id="res-reasoning-box">
+                        <strong>Analyst Reasoning:</strong>
+                        <p id="res-reasoning-text">Analyzing signals...</p>
+                    </div>
+
+                    <div class="recommendations-box">
+                        <h4>⚡ Recommended Incident Response Actions:</h4>
+                        <ul class="action-list" id="res-action-list">
+                            <!-- Populated dynamically -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Threat Intelligence Log Table -->
+        <section class="history-section glass-panel">
+            <div class="panel-header">
+                <h2>📋 Recent Threat Investigations Log</h2>
+                <button class="btn btn-secondary btn-sm" id="btn-refresh-history">🔄 Refresh Feed</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="threat-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Sender / Origin</th>
+                            <th>Subject</th>
+                            <th>Category</th>
+                            <th>Risk Score</th>
+                            <th>Threat Level</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                        <tr>
+                            <td colspan="7" class="loading-state">Loading threat logs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Detailed Scan Inspection -->
+    <div class="modal" id="scan-modal">
+        <div class="modal-backdrop" id="modal-backdrop"></div>
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3 id="modal-title">Threat Forensic Detail</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <p><strong>MailSentry AI</strong> &bull; Autonomous Email Security Sentinel &bull; Built for <strong>Fetch-a-Thon 3.0</strong></p>
+            <div class="footer-links">
+                <a href="https://asi1.ai" target="_blank" rel="noopener">ASI:One Protocol</a> &bull;
+                <a href="https://agentverse.ai" target="_blank" rel="noopener">Agentverse</a> &bull;
+                <a href="https://fetch.ai" target="_blank" rel="noopener">Fetch.ai Network</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

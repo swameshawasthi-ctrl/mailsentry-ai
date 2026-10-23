@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 import argparse
 from dotenv import load_dotenv
 
@@ -9,16 +10,22 @@ load_dotenv()
 from tools.email_parser import parse_email_content
 from tools.domain_checker import analyze_domain, extract_domain_from_url
 from tools.phishing_detector import detect_phishing
+from tools.header_forensics import inspect_email_headers
 from tools.risk_scoring import generate_investigation_report, SecurityAssessment
+from database import save_scan
 
-def run_investigation_pipeline(raw_email_text: str) -> SecurityAssessment:
+def run_investigation_pipeline(raw_email_text: str, source: str = "asi1_chat") -> SecurityAssessment:
     """
-    Executes end-to-end multi-tool forensic analysis on the supplied email text.
+    Executes end-to-end multi-tool forensic analysis on the supplied email text
+    and records results in the security operations database.
     """
     # Tool 1: Email & header parsing
     parsed_email = parse_email_content(raw_email_text)
 
-    # Tool 2: Domain & DNS forensics for sender domain and extracted links
+    # Tool 2: RFC 822 Header & IP forensics
+    header_forensics = inspect_email_headers(raw_email_text, sender_domain=parsed_email.sender_domain)
+
+    # Tool 3: Domain & DNS forensics for sender domain and extracted links
     domains_to_check = set()
     if parsed_email.sender_domain:
         domains_to_check.add(parsed_email.sender_domain)
@@ -32,11 +39,36 @@ def run_investigation_pipeline(raw_email_text: str) -> SecurityAssessment:
         for d in domains_to_check
     ]
 
-    # Tool 3: Phishing & social engineering detection
+    # Tool 4: Phishing & social engineering detection
     phish_res = detect_phishing(parsed_email, domain_results)
 
-    # Tool 4: Comprehensive risk scoring & report generation
-    assessment = generate_investigation_report(parsed_email, domain_results, phish_res)
+    # Tool 5: Comprehensive risk scoring & report generation
+    assessment = generate_investigation_report(
+        parsed_email,
+        domain_results,
+        phish_res,
+        header_forensics=header_forensics
+    )
+
+    # Persist in SQLite Threat Intelligence DB
+    try:
+        save_scan(
+            sender_email=parsed_email.sender_email,
+            sender_domain=parsed_email.sender_domain,
+            subject=parsed_email.subject,
+            risk_score=assessment.risk_score,
+            threat_level=assessment.threat_level,
+            attack_category=assessment.attack_category,
+            evidence=assessment.evidence_items,
+            recommendations=assessment.actionable_recommendations,
+            originating_ip=assessment.originating_ip,
+            ip_country=assessment.ip_country,
+            raw_text=raw_email_text,
+            source=source
+        )
+    except Exception as e:
+        print(f"[!] Warning: Failed to save scan to database: {e}")
+
     return assessment
 
 # -------------------------------------------------------------
@@ -98,7 +130,7 @@ def start_agent():
         await ctx.send(
             sender,
             ChatMessage(
-                msg_id=ctx.get_random_uuid(),
+                msg_id=uuid.uuid4(),
                 content=[TextContent(text=assessment.formatted_chat_report)]
             )
         )

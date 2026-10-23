@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 from .email_parser import ParsedEmail
 from .domain_checker import DomainAnalysisResult
 from .phishing_detector import PhishingAnalysisResult
+from .header_forensics import HeaderForensicsResult
 
 class SecurityAssessment(BaseModel):
     threat_level: str
@@ -11,12 +12,17 @@ class SecurityAssessment(BaseModel):
     summary: str
     evidence_items: List[str] = Field(default_factory=list)
     actionable_recommendations: List[str] = Field(default_factory=list)
+    originating_ip: Optional[str] = None
+    ip_country: Optional[str] = None
+    spf_status: Optional[str] = None
+    dkim_status: Optional[str] = None
     formatted_chat_report: str = ""
 
 def calculate_risk_score(
     email: ParsedEmail,
     domain_results: List[DomainAnalysisResult],
-    phish_res: PhishingAnalysisResult
+    phish_res: PhishingAnalysisResult,
+    header_forensics: Optional[HeaderForensicsResult] = None
 ) -> int:
     """
     Computes weighted forensic risk score from 0 to 100.
@@ -25,7 +31,7 @@ def calculate_risk_score(
 
     # Base on phishing detection confidence
     if phish_res.is_phishing:
-        score += int(phish_res.confidence * 45)
+        score += int(phish_res.confidence * 40)
     else:
         score += int((1.0 - phish_res.confidence) * 15)
 
@@ -39,7 +45,7 @@ def calculate_risk_score(
 
     # Urgency cues (+15)
     if email.urgency_cues:
-        score += min(len(email.urgency_cues) * 7, 15)
+        score += min(len(email.urgency_cues) * 6, 15)
 
     # Credential theft intent (+20)
     if email.credential_cues:
@@ -49,17 +55,25 @@ def calculate_risk_score(
     if any("mismatch" in v.lower() for v in phish_res.detected_vectors):
         score += 15
 
-    return min(max(score, 5), 98) if phish_res.is_phishing else min(score, 25)
+    # Header anomalies (+20 if SPF/DKIM fails)
+    if header_forensics:
+        if header_forensics.spf_status in ["fail", "softfail", "hardfail"]:
+            score += 15
+        if header_forensics.dkim_status in ["fail"]:
+            score += 15
+
+    return min(max(score, 5), 99) if phish_res.is_phishing else min(score, 25)
 
 def generate_investigation_report(
     email: ParsedEmail,
     domain_results: List[DomainAnalysisResult],
-    phish_res: PhishingAnalysisResult
+    phish_res: PhishingAnalysisResult,
+    header_forensics: Optional[HeaderForensicsResult] = None
 ) -> SecurityAssessment:
     """
     Synthesizes tools output into an executive security assessment and ACP chat markdown.
     """
-    score = calculate_risk_score(email, domain_results, phish_res)
+    score = calculate_risk_score(email, domain_results, phish_res, header_forensics)
 
     # Determine Threat Level
     if score >= 80:
@@ -76,6 +90,19 @@ def generate_investigation_report(
     if email.sender_email:
         evidence.append(f"**Sender Identity:** `{email.sender_email}`")
     
+    # Originating IP & Geo
+    origin_ip = None
+    ip_country = None
+    if header_forensics:
+        origin_ip = header_forensics.originating_ip
+        ip_country = header_forensics.ip_country
+        if header_forensics.originating_ip:
+            geo_info = f" ({header_forensics.ip_country})" if header_forensics.ip_country else ""
+            evidence.append(f"**Originating IP:** `{header_forensics.originating_ip}`{geo_info}")
+        for flag in header_forensics.flags:
+            if flag not in evidence:
+                evidence.append(f"**Header Forensics:** {flag}")
+
     for d in domain_results:
         if d.typosquatting_detected:
             evidence.append(f"**Domain Deception:** `{d.domain}` mimics `{d.impersonated_target}` (Typosquatting)")
@@ -116,7 +143,11 @@ def generate_investigation_report(
 | **Risk Score** | **{score} / 100** |
 | **Category** | {phish_res.attack_category} |
 | **Sender** | `{email.sender_email or 'Unknown'}` |
+"""
+    if origin_ip:
+        chat_markdown += f"| **Originating IP** | `{origin_ip}` ({ip_country or 'Global'}) |\n"
 
+    chat_markdown += """
 ---
 
 #### 🔍 Forensic Evidence & Findings:
@@ -140,5 +171,9 @@ def generate_investigation_report(
         summary=summary,
         evidence_items=evidence,
         actionable_recommendations=recommendations,
+        originating_ip=origin_ip,
+        ip_country=ip_country,
+        spf_status=header_forensics.spf_status if header_forensics else None,
+        dkim_status=header_forensics.dkim_status if header_forensics else None,
         formatted_chat_report=chat_markdown
     )
