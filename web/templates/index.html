@@ -3,321 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MailSentry Enterprise SOC — Autonomous Threat Forensics</title>
-    <meta name="description" content="Enterprise Email Threat Forensics and Typosquatting Investigation Platform powered by Fetch.ai & ASI:One.">
-    <!-- Modern Corporate Typography -->
+    <title>MailSentry — Email Threat Forensics</title>
+    <meta name="description" content="Minimalist autonomous email threat investigation powered by Fetch.ai & ASI:One.">
+    <!-- Clean Minimalist Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="enterprise-layout">
-    <!-- App Container -->
-    <div class="app-shell">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <div class="brand-mark">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<body class="minimal-dark">
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-content">
+            <div class="nav-left">
+                <a href="/" class="brand-link">
+                    <svg class="brand-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <path d="m9 12 2 2 4-4"/>
                     </svg>
-                </div>
-                <div class="brand-text">
-                    <span class="company-name">MAILSENTRY</span>
-                    <span class="product-badge">ENTERPRISE SOC</span>
-                </div>
+                    <span class="brand-name">MailSentry</span>
+                </a>
+                <span class="version-tag">Fetch-a-Thon 3.0</span>
             </div>
 
-            <nav class="sidebar-nav">
-                <div class="nav-section-label">INVESTIGATION</div>
-                <a href="#investigator" class="nav-item active">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="m4 8 8-5 8 5"/></svg>
-                    <span>Threat Console</span>
-                </a>
-                <a href="#incidents" class="nav-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                    <span>Incident Audit Log</span>
-                </a>
-                <a href="#network" class="nav-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-                    <span>Domain Forensics</span>
-                </a>
-
-                <div class="nav-section-label">INFRASTRUCTURE</div>
-                <div class="nav-item static">
-                    <span class="status-dot green"></span>
-                    <span>ASI:One Protocol v0.3</span>
-                </div>
-                <div class="nav-item static">
-                    <span class="status-dot green"></span>
-                    <span>Agentverse Mailbox</span>
-                </div>
-                <div class="nav-item static">
-                    <span class="status-dot green"></span>
-                    <span>Almanac Contract</span>
-                </div>
+            <nav class="nav-center">
+                <a href="#scanner" class="nav-tab active">Scanner</a>
+                <a href="#history" class="nav-tab">Incident Log</a>
             </nav>
 
-            <div class="sidebar-footer">
-                <div class="soc-analyst">
-                    <div class="analyst-avatar">SA</div>
-                    <div class="analyst-info">
-                        <span class="analyst-name">SecOps Triage L3</span>
-                        <span class="analyst-role">ASI:One Sentinel Node</span>
-                    </div>
+            <div class="nav-right">
+                <div class="status-pill">
+                    <span class="pulse-dot"></span>
+                    <span>ASI:One Protocol Active</span>
                 </div>
-            </div>
-        </aside>
-
-        <!-- Main Workspace -->
-        <div class="main-content">
-            <!-- Top Corporate Header -->
-            <header class="top-nav">
-                <div class="breadcrumbs">
-                    <span class="crumb-parent">Security Operations</span>
-                    <span class="crumb-separator">/</span>
-                    <span class="crumb-current">Email Threat Forensics & Impersonation Triage</span>
-                </div>
-
-                <div class="top-actions">
-                    <div class="tenant-pill">
-                        <span class="tenant-label">ENVIRONMENT:</span>
-                        <span class="tenant-val">Production SOC (Live Mesh)</span>
-                    </div>
-                    <button class="btn btn-outline btn-sm" id="btn-export-log">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        <span>Export CSV</span>
-                    </button>
-                </div>
-            </header>
-
-            <div class="content-container">
-                <!-- Executive Metrics Bar -->
-                <section class="kpi-grid">
-                    <div class="metric-card">
-                        <div class="metric-top">
-                            <span class="metric-label">TOTAL INGESTED SCANS</span>
-                            <span class="metric-sublabel">Last 24h</span>
-                        </div>
-                        <div class="metric-val" id="stat-total">0</div>
-                        <div class="metric-trend text-muted">Automated uAgent multi-tool pipeline</div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="metric-top">
-                            <span class="metric-label">CRITICAL ATTACKS INTERCEPTED</span>
-                            <span class="badge badge-danger">SEV-1 / SEV-2</span>
-                        </div>
-                        <div class="metric-val text-danger" id="stat-critical">0</div>
-                        <div class="metric-trend text-danger">Credential theft & brand typosquatting</div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="metric-top">
-                            <span class="metric-label">BASELINE CLEAN EMAILS</span>
-                            <span class="badge badge-success">VERIFIED</span>
-                        </div>
-                        <div class="metric-val text-success" id="stat-safe">0</div>
-                        <div class="metric-trend text-muted">Legitimate communications cleared</div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="metric-top">
-                            <span class="metric-label">THREAT INTERCEPTION RATE</span>
-                            <span class="badge badge-neutral">EFFICACY</span>
-                        </div>
-                        <div class="metric-val text-primary" id="stat-rate">0%</div>
-                        <div class="metric-trend text-muted">Automated SOC triage accuracy</div>
-                    </div>
-                </section>
-
-                <!-- Investigation Console -->
-                <section class="card panel-investigator" id="investigator">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Threat Forensics & Payload Analysis</h2>
-                            <p class="card-desc">Submit raw email body, RFC 822 headers, or suspicious URLs to execute multi-tool forensic inspection.</p>
-                        </div>
-                        <div class="scenario-buttons">
-                            <span class="scenario-label">Load Incident Sample:</span>
-                            <button class="btn btn-scenario" id="btn-load-phish">Sample 1: PayPal Typosquatting</button>
-                            <button class="btn btn-scenario" id="btn-load-headers">Sample 2: Microsoft SPF/DKIM Fail</button>
-                            <button class="btn btn-scenario" id="btn-load-clean">Sample 3: Legitimate Workspace</button>
-                        </div>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="editor-wrapper">
-                            <div class="editor-meta-bar">
-                                <span class="editor-mode">INPUT: RFC 822 / RAW PAYLOAD</span>
-                                <span class="editor-encoding">UTF-8 | TLS-INSPECT</span>
-                            </div>
-                            <textarea 
-                                id="email-input" 
-                                class="code-textarea" 
-                                placeholder="Paste suspicious email text or full MIME headers here..."
-                                rows="7"
-                            ></textarea>
-                        </div>
-
-                        <div class="action-toolbar">
-                            <button class="btn btn-primary" id="btn-analyze">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/><path d="M2 12h20"/><path d="m5 7-3 5 3 5"/><path d="m19 7 3 5-3 5"/></svg>
-                                <span>Execute Forensics</span>
-                            </button>
-                            <button class="btn btn-outline" id="btn-clear">Clear Input</button>
-
-                            <div class="pipeline-indicators">
-                                <span class="pipe-tag">Typosquatting Engine</span>
-                                <span class="pipe-arrow">&rarr;</span>
-                                <span class="pipe-tag">DNS/MX Resolver</span>
-                                <span class="pipe-arrow">&rarr;</span>
-                                <span class="pipe-tag">RFC Auth Analyzer</span>
-                                <span class="pipe-arrow">&rarr;</span>
-                                <span class="pipe-tag">ASI:One LLM</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Investigation Dossier (Results) -->
-                <section class="card panel-results" id="results-panel" style="display: none;">
-                    <div class="dossier-header">
-                        <div class="dossier-badge-row">
-                            <span class="severity-badge" id="res-severity-badge">CRITICAL PHISHING</span>
-                            <span class="dossier-id" id="res-incident-id">INCIDENT ID: INC-2026-9281</span>
-                        </div>
-                        <div class="dossier-actions">
-                            <button class="btn btn-outline btn-sm" id="btn-export-report">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                <span>Export JSON Dossier</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="dossier-grid">
-                        <!-- Score & Classification Panel -->
-                        <div class="dossier-col-score">
-                            <div class="score-card">
-                                <span class="score-title">FORENSIC RISK SCORE</span>
-                                <div class="score-display">
-                                    <span class="score-number" id="res-score">0</span>
-                                    <span class="score-denominator">/ 100</span>
-                                </div>
-                                <div class="score-bar-track">
-                                    <div class="score-bar-fill" id="res-score-bar" style="width: 0%;"></div>
-                                </div>
-                                <div class="classification-info">
-                                    <span class="meta-label">ATTACK CLASSIFICATION:</span>
-                                    <strong class="meta-val" id="res-category">Credential Harvesting</strong>
-                                </div>
-                                <div class="classification-info">
-                                    <span class="meta-label">DISCLOSED SENDER:</span>
-                                    <code class="meta-val-code" id="res-sender">Unknown</code>
-                                </div>
-                            </div>
-
-                            <!-- Authentication Status Table -->
-                            <div class="auth-matrix">
-                                <h4 class="auth-title">Header Authentication</h4>
-                                <div class="auth-row">
-                                    <span>SPF Check</span>
-                                    <span class="status-tag" id="auth-spf">CHECKING</span>
-                                </div>
-                                <div class="auth-row">
-                                    <span>DKIM Signature</span>
-                                    <span class="status-tag" id="auth-dkim">CHECKING</span>
-                                </div>
-                                <div class="auth-row">
-                                    <span>Sender MX Record</span>
-                                    <span class="status-tag" id="auth-mx">RESOLVING</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Forensic Evidence & Recommendations -->
-                        <div class="dossier-col-findings">
-                            <div class="evidence-block">
-                                <h3 class="section-title">Forensic Evidence Chain</h3>
-                                <ul class="evidence-list" id="res-evidence-list">
-                                    <!-- Dynamic -->
-                                </ul>
-                            </div>
-
-                            <div class="analyst-note-card">
-                                <div class="note-header">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                                    <span>ASI:One Forensic Intelligence Rationale</span>
-                                </div>
-                                <p class="note-body" id="res-reasoning-text">Analyzing evidence chain...</p>
-                            </div>
-
-                            <div class="remediation-block">
-                                <h3 class="section-title">SecOps Remediation Protocol</h3>
-                                <ul class="action-list" id="res-action-list">
-                                    <!-- Dynamic -->
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Incident History Log Table -->
-                <section class="card panel-history" id="incidents">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Security Incident Audit Trail</h2>
-                            <p class="card-desc">Chronological log of all emails triaged via ASI:One Chat Protocol and Enterprise SOC console.</p>
-                        </div>
-                        <button class="btn btn-outline btn-sm" id="btn-refresh-history">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                            <span>Refresh Logs</span>
-                        </button>
-                    </div>
-
-                    <div class="table-container">
-                        <table class="enterprise-table">
-                            <thead>
-                                <tr>
-                                    <th>TIMESTAMP</th>
-                                    <th>SENDER / DOMAIN</th>
-                                    <th>SUBJECT</th>
-                                    <th>CATEGORY</th>
-                                    <th>RISK SCORE</th>
-                                    <th>SEVERITY</th>
-                                    <th>ORIGIN IP</th>
-                                    <th>ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody id="history-tbody">
-                                <tr>
-                                    <td colspan="8" class="empty-state">Loading security incidents...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- Incident Detail Modal Drawer -->
-    <div class="modal" id="scan-modal">
-        <div class="modal-backdrop" id="modal-backdrop"></div>
-        <div class="modal-card">
-            <div class="modal-header">
+    <!-- Main Workspace -->
+    <main class="page-container">
+        <!-- Page Title & Header -->
+        <section class="page-header">
+            <h1 class="page-title">Email Threat Forensics</h1>
+            <p class="page-subtitle">Autonomous investigation of phishing vectors, typosquatting domains, and RFC 822 authentication headers.</p>
+        </section>
+
+        <!-- KPI Metric Row -->
+        <section class="stats-row" aria-label="System Metrics">
+            <div class="stat-card">
+                <div class="stat-label">Total Analyzed</div>
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-caption">Autonomous tool runs</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Threats Intercepted</div>
+                <div class="stat-value danger" id="stat-critical">0</div>
+                <div class="stat-caption">Phishing & Credential Harvests</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Clean Verified</div>
+                <div class="stat-value" id="stat-safe">0</div>
+                <div class="stat-caption">Baseline legitimate mail</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Interception Rate</div>
+                <div class="stat-value" id="stat-rate">0%</div>
+                <div class="stat-caption">Forensic triage accuracy</div>
+            </div>
+        </section>
+
+        <!-- Threat Scanner Input Box -->
+        <section class="box scanner-box" id="scanner">
+            <div class="box-header">
+                <div class="box-title">New Investigation</div>
+                <div class="preset-links">
+                    <span class="preset-label">Load sample:</span>
+                    <button class="preset-btn" id="btn-load-phish">PayPal Typosquat</button>
+                    <button class="preset-btn" id="btn-load-headers">RFC Spoofed Headers</button>
+                    <button class="preset-btn" id="btn-load-clean">Clean Workspace</button>
+                </div>
+            </div>
+
+            <div class="textarea-wrapper">
+                <textarea 
+                    id="email-input" 
+                    placeholder="Paste raw email text, RFC headers, or suspicious URLs to analyze..." 
+                    rows="8"
+                    spellcheck="false"
+                ></textarea>
+            </div>
+
+            <div class="box-footer">
+                <div class="footer-left">
+                    <button class="btn btn-primary" id="btn-analyze">Analyze Message</button>
+                    <button class="btn btn-secondary" id="btn-clear">Clear</button>
+                </div>
+                <div class="footer-right">
+                    <span class="engine-text">Engines: Domain Check &bull; DNS MX &bull; ASI:One LLM</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Investigation Results (Shown After Analysis) -->
+        <section class="box results-box" id="results-panel" style="display: none;">
+            <div class="box-header">
+                <div class="verdict-tag-group">
+                    <span class="verdict-tag" id="res-threat-level">ANALYZING</span>
+                    <span class="incident-code" id="res-incident-id">INC-2026-0000</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btn-export-report">Download JSON Dossier</button>
+            </div>
+
+            <!-- Score & Top Details -->
+            <div class="verdict-hero">
+                <div class="verdict-score-block">
+                    <div class="score-caption">RISK ASSESSMENT</div>
+                    <div class="score-large">
+                        <span id="res-score">0</span><span class="score-max">/100</span>
+                    </div>
+                </div>
+
+                <div class="verdict-meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-name">Classification</span>
+                        <span class="meta-value" id="res-category">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-name">Sender Identity</span>
+                        <span class="meta-value mono" id="res-sender">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-name">Origin IP / Geo</span>
+                        <span class="meta-value mono" id="res-origin-ip">Internal / Direct</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-name">Authentication</span>
+                        <span class="meta-value" id="res-auth-summary">SPF: — | DKIM: —</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evidence List -->
+            <div class="results-sub-block">
+                <div class="sub-block-title">Forensic Evidence Chain</div>
+                <ul class="clean-list" id="res-evidence-list">
+                    <!-- Populated dynamically -->
+                </ul>
+            </div>
+
+            <!-- AI Reasoning -->
+            <div class="reasoning-card" id="res-reasoning-card">
+                <div class="reasoning-header">ASI:One Threat Intelligence Rationale</div>
+                <p class="reasoning-body" id="res-reasoning-text">Evaluation in progress...</p>
+            </div>
+
+            <!-- Recommended Actions -->
+            <div class="results-sub-block">
+                <div class="sub-block-title">Recommended Remediation</div>
+                <ul class="clean-list numbered" id="res-action-list">
+                    <!-- Populated dynamically -->
+                </ul>
+            </div>
+        </section>
+
+        <!-- Incident History Table -->
+        <section class="box history-box" id="history">
+            <div class="box-header">
                 <div>
-                    <h3 class="modal-title" id="modal-title">Incident Forensic Dossier</h3>
-                    <span class="modal-subtitle">MailSentry Autonomous SecOps Record</span>
+                    <div class="box-title">Incident Audit Log</div>
+                    <div class="box-subtitle">Permanent record stored in local SQLite database.</div>
                 </div>
-                <button class="modal-close" id="modal-close">&times;</button>
+                <div class="history-actions">
+                    <button class="btn btn-secondary btn-sm" id="btn-refresh-history">Refresh</button>
+                    <button class="btn btn-secondary btn-sm" id="btn-export-log">Export CSV</button>
+                </div>
             </div>
-            <div class="modal-body" id="modal-body">
-                <!-- Dynamically populated -->
+
+            <div class="table-scroll">
+                <table class="clean-table">
+                    <thead>
+                        <tr>
+                            <th>TIME (UTC)</th>
+                            <th>SENDER</th>
+                            <th>SUBJECT</th>
+                            <th>CATEGORY</th>
+                            <th>SCORE</th>
+                            <th>VERDICT</th>
+                            <th>ORIGIN</th>
+                            <th>DETAILS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                        <tr>
+                            <td colspan="8" class="table-empty">Loading audit records...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Inspection Modal Dialog -->
+    <div class="modal" id="scan-modal">
+        <div class="modal-overlay" id="modal-backdrop"></div>
+        <div class="modal-dialog">
+            <div class="modal-dialog-header">
+                <div class="modal-title">Incident Record Detail</div>
+                <button class="modal-close-btn" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-dialog-body" id="modal-body">
+                <!-- Injected via JS -->
             </div>
         </div>
     </div>
+
+    <!-- Minimalist Footer -->
+    <footer class="page-footer">
+        <div class="footer-inner">
+            <span>MailSentry AI &bull; Built for Fetch-a-Thon 3.0</span>
+            <div class="footer-links">
+                <a href="https://asi1.ai" target="_blank" rel="noopener">ASI:One</a>
+                <a href="https://agentverse.ai" target="_blank" rel="noopener">Agentverse</a>
+                <a href="https://fetch.ai" target="_blank" rel="noopener">Fetch.ai</a>
+            </div>
+        </div>
+    </footer>
 
     <script src="/static/app.js"></script>
 </body>
