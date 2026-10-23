@@ -110,13 +110,26 @@ python agent.py --test "From: security@paypa1.com. Urgent: verify your password 
    python agent.py
    ```
 2. **Mailbox Registration**:
-   - Open your [Agentverse Console](https://agentverse.ai).
-   - Go to **Local Agents** / **Mailroom**.
-   - Create a Mailbox, copy the Mailbox Key, and paste it into `.env` as `AGENT_MAILBOX_KEY`.
+   - The agent automatically connects via its Agentverse mailbox and registers with the Almanac API.
 3. **Discover in ASI:One**:
    - Go to [ASI:One](https://asi1.ai).
-   - Search for **MailSentry AI** by name or your Agent Address.
-   - Send: *"Analyze this suspicious email: Your bank account will be closed in 1 hour. Verify at http://fakebank-support.xyz"*.
+   - Search for **MailSentry AI** (`agent1qvymlm8pvvm7rgx254mfhfuspnzyzklwx2rfw3cua2p0aztn46ew563kdc6`).
+   - Send: *"Analyze this suspicious email: Your PayPal account has been suspended in 30 minutes! Verify at https://paypa1-support.com"*.
+
+---
+
+## 🖥️ Enterprise SOC Web Dashboard
+
+In addition to autonomous chat on ASI:One, MailSentry AI includes a real-time Cybersecurity SOC Web Dashboard:
+
+```bash
+python server.py
+```
+Open **`http://localhost:8050`** in your browser to access:
+- **Interactive Threat Scanner**: Paste suspicious email text or raw RFC headers.
+- **Radial Threat Gauge**: Real-time risk meter (0–100) with visual severity states.
+- **Live Incident Database**: SQLite persistence logging every scan from both ASI:One chat and web.
+- **Export Forensic Reports**: One-click JSON incident export for corporate SOC analysts.
 
 ---
 
@@ -124,13 +137,14 @@ python agent.py --test "From: security@paypa1.com. Urgent: verify your password 
 
 | Criteria | Weight | How MAILSENTRY AI Delivers |
 | :--- | :---: | :--- |
-| **Functionality** | 25% | Full multi-tool pipeline: parsing, DNS checks, typosquatting heuristic & LLM forensics. |
-| **Fetch.ai Tech** | 20% | Implements native `uagents`, `AgentChatProtocol`, `Almanac` manifest & Agentverse Mailbox. |
-| **Innovation** | 20% | Moves from static spam filters to autonomous interactive email threat forensics. |
-| **Real-World Impact** | 20% | Directly targets the #1 vector of cybercrime & corporate financial fraud. |
-| **User Experience** | 15% | Instant, clean, evidence-backed security reports delivered right inside ASI:One. |
+| **Functionality** | 25% | Multi-tool forensic pipeline: RFC header parsing, SPF/DKIM validation, IP tracing, typosquatting & LLM reasoning. |
+| **Fetch.ai Tech** | 20% | Implements native `uagents` 0.26, `AgentChatProtocol` 0.3.0, `Almanac` manifest & Agentverse Mailbox. |
+| **Innovation** | 20% | Autonomous intent-to-action transition from passive spam filters to interactive cybersecurity agent. |
+| **Real-World Impact** | 20% | Solves the #1 enterprise threat vector responsible for 85% of corporate cyber breaches. |
+| **User Experience** | 15% | Dual UX: Instant conversational reports in ASI:One + sleek dark-mode SOC web dashboard. |
 
 ---
 
 ## 📜 License
 MIT License — Created for Fetch-A-Thon 3.0.
+
