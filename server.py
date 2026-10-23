@@ -54,6 +54,8 @@ async def analyze_email(req: AnalyzeRequest):
         "subject": parsed.subject,
         "evidence": assessment.evidence_items,
         "recommendations": assessment.actionable_recommendations,
+        "mitre_tactics": assessment.mitre_tactics,
+        "links_breakdown": assessment.extracted_links_breakdown,
         "analyst_reasoning": assessment.summary,
         "originating_ip": assessment.originating_ip,
         "ip_country": assessment.ip_country,

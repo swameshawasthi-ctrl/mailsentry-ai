@@ -116,17 +116,25 @@ body.minimal-dark {
 .nav-tab.active {
     color: var(--text-white);
 }
-.status-pill {
+
+.asi-btn {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 11px;
-    color: var(--text-secondary);
-    background: var(--bg-surface);
+    color: var(--text-primary);
+    background: var(--bg-surface-elevated);
     border: 1px solid var(--border-subtle);
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: var(--radius-pill);
+    text-decoration: none;
     font-family: var(--font-mono);
+    transition: all 0.15s ease;
+}
+.asi-btn:hover {
+    border-color: var(--border-strong);
+    color: var(--text-white);
+    background: var(--bg-surface-hover);
 }
 .pulse-dot {
     width: 6px;
@@ -139,19 +147,32 @@ body.minimal-dark {
 .page-container {
     max-width: 1080px;
     margin: 0 auto;
-    padding: 40px 20px 80px;
+    padding: 36px 20px 80px;
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 28px;
 }
 
 /* Page Header */
+.header-badge-row {
+    margin-bottom: 10px;
+}
+.agent-address-chip {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    padding: 3px 8px;
+    border-radius: 3px;
+    display: inline-block;
+}
 .page-header {
     border-bottom: 1px solid var(--border-subtle);
     padding-bottom: 24px;
 }
 .page-title {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 600;
     letter-spacing: -0.5px;
     color: var(--text-white);
@@ -160,7 +181,7 @@ body.minimal-dark {
 .page-subtitle {
     font-size: 14px;
     color: var(--text-secondary);
-    max-width: 640px;
+    max-width: 680px;
 }
 
 /* Stats Row */
@@ -296,7 +317,19 @@ textarea#email-input:focus {
 .footer-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+}
+.kbd-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+kbd {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 10px;
+    font-family: var(--font-mono);
 }
 .engine-text {
     font-size: 11px;
@@ -348,6 +381,10 @@ textarea#email-input:focus {
     align-items: center;
     gap: 10px;
 }
+.verdict-actions {
+    display: flex;
+    gap: 8px;
+}
 .verdict-tag {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -378,7 +415,7 @@ textarea#email-input:focus {
 
 .verdict-hero {
     display: grid;
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: 180px 1fr;
     gap: 24px;
     padding: 20px;
     border-bottom: 1px solid var(--border-subtle);
@@ -450,6 +487,22 @@ textarea#email-input:focus {
     margin-bottom: 10px;
 }
 
+/* MITRE Chips */
+.mitre-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.mitre-chip {
+    background: var(--bg-black);
+    border: 1px solid var(--border-subtle);
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #e4e4e7;
+}
+
 .clean-list {
     list-style: none;
     display: flex;
@@ -492,6 +545,51 @@ textarea#email-input:focus {
     font-size: 12px;
     color: #d4d4d8;
     line-height: 1.6;
+}
+
+/* Filter Bar */
+.table-filter-bar {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.filter-input {
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    flex: 1;
+    min-width: 220px;
+    outline: none;
+}
+.filter-input:focus {
+    border-color: var(--border-focus);
+}
+.filter-group {
+    display: flex;
+    gap: 6px;
+}
+.filter-pill {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-family: var(--font-mono);
+}
+.filter-pill.active {
+    background: var(--bg-surface-elevated);
+    color: var(--text-white);
+    border-color: var(--border-strong);
 }
 
 /* Incident Table */
@@ -632,4 +730,28 @@ textarea#email-input:focus {
 }
 .footer-links a:hover {
     color: var(--text-white);
+}
+
+/* Print Friendly Styles */
+@media print {
+    .navbar, .page-header, .scanner-box, .history-box, .page-footer, .verdict-actions {
+        display: none !important;
+    }
+    body.minimal-dark {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .box {
+        border: 1px solid #000000 !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+    }
+    .verdict-hero, .reasoning-card, .clean-list li {
+        background: #f8fafc !important;
+        color: #000000 !important;
+        border-color: #e2e8f0 !important;
+    }
+    .score-large, .meta-value, .clean-list li strong {
+        color: #000000 !important;
+    }
 }

@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnRefreshHistory = document.getElementById("btn-refresh-history");
     const btnExportReport = document.getElementById("btn-export-report");
     const btnExportLog = document.getElementById("btn-export-log");
+    const btnPrintReport = document.getElementById("btn-print-report");
 
     const resultsPanel = document.getElementById("results-panel");
     const resThreatLevel = document.getElementById("res-threat-level");
@@ -22,11 +23,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const resReasoningText = document.getElementById("res-reasoning-text");
     const resActionList = document.getElementById("res-action-list");
 
+    const blockMitre = document.getElementById("block-mitre");
+    const resMitreList = document.getElementById("res-mitre-list");
+    const blockLinks = document.getElementById("block-links");
+    const resLinksTbody = document.getElementById("res-links-tbody");
+
     const statTotal = document.getElementById("stat-total");
     const statCritical = document.getElementById("stat-critical");
     const statSafe = document.getElementById("stat-safe");
     const statRate = document.getElementById("stat-rate");
     const historyTbody = document.getElementById("history-tbody");
+
+    const filterSearch = document.getElementById("filter-search");
+    const filterPills = document.querySelectorAll(".filter-pill");
 
     const scanModal = document.getElementById("scan-modal");
     const modalClose = document.getElementById("modal-close");
@@ -35,10 +44,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let currentReport = null;
     let cachedScans = [];
+    let activeFilter = "all";
 
-    // Real Realistic Samples
+    // Realistic Samples
     const SAMPLE_PHISHING = `From: PayPal Security <security@paypa1-support.com>
-To: user@example.com
+To: target.user@corporate.com
 Subject: URGENT: Your PayPal Account Has Been Suspended!
 
 Dear Customer,
@@ -47,7 +57,7 @@ We detected multiple failed login attempts on your account.
 Your account will be terminated in 30 minutes unless you verify your identity.
 
 Please confirm your password immediately at:
-https://paypa1-support.com/verify-identity
+https://paypa1-support.com/verify-identity?token=89401941
 
 PayPal Security Team`;
 
@@ -96,6 +106,19 @@ Product Engineering`;
         emailInput.value = "";
         resultsPanel.style.display = "none";
         emailInput.focus();
+    });
+
+    // Keyboard Shortcut (Cmd/Ctrl + Enter)
+    emailInput.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+            e.preventDefault();
+            runAnalysis();
+        }
+    });
+
+    // Print Dossier
+    btnPrintReport.addEventListener("click", () => {
+        window.print();
     });
 
     // Run Forensic Analysis
@@ -155,6 +178,41 @@ Product Engineering`;
             else if (text.includes("dkim=pass")) dkimStatus = "PASS";
 
             resAuthSummary.textContent = `SPF: ${spfStatus} | DKIM: ${dkimStatus}`;
+
+            // MITRE ATT&CK Mapping
+            const mitre = data.mitre_tactics || [];
+            if (mitre.length > 0) {
+                blockMitre.style.display = "block";
+                resMitreList.innerHTML = "";
+                mitre.forEach(m => {
+                    const span = document.createElement("span");
+                    span.className = "mitre-chip";
+                    span.textContent = m;
+                    resMitreList.appendChild(span);
+                });
+            } else {
+                blockMitre.style.display = "none";
+            }
+
+            // Link Decomposition
+            const links = data.links_breakdown || [];
+            if (links.length > 0) {
+                blockLinks.style.display = "block";
+                resLinksTbody.innerHTML = "";
+                links.forEach(l => {
+                    const tr = document.createElement("tr");
+                    const statusClass = l.is_typosquatting ? "badge-tag danger" : "badge-tag safe";
+                    tr.innerHTML = `
+                        <td style="font-family: var(--font-mono); font-size: 11px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(l.url)}</td>
+                        <td style="font-family: var(--font-mono); font-size: 11px;">${escapeHtml(l.host)}</td>
+                        <td style="color: var(--text-white); font-weight: 500;">${l.mimicked_brand ? escapeHtml(l.mimicked_brand.toUpperCase()) : '—'}</td>
+                        <td><span class="${statusClass}">${l.verdict}</span></td>
+                    `;
+                    resLinksTbody.appendChild(tr);
+                });
+            } else {
+                blockLinks.style.display = "none";
+            }
 
             // Evidence List
             resEvidenceList.innerHTML = "";
@@ -220,6 +278,68 @@ Product Engineering`;
         a.click();
     });
 
+    // Filtering & Search
+    function renderFilteredHistory() {
+        const query = (filterSearch.value || "").toLowerCase().trim();
+
+        let filtered = cachedScans.filter(s => {
+            // Severity filter
+            if (activeFilter === "critical" && s.risk_score < 80) return false;
+            if (activeFilter === "suspicious" && (s.risk_score < 40 || s.risk_score >= 80)) return false;
+            if (activeFilter === "safe" && s.risk_score >= 40) return false;
+
+            // Search query
+            if (query) {
+                const combined = `${s.sender_email || ''} ${s.sender_domain || ''} ${s.subject || ''} ${s.attack_category || ''}`.toLowerCase();
+                if (!combined.includes(query)) return false;
+            }
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            historyTbody.innerHTML = `<tr><td colspan="8" class="table-empty">No incidents match the search criteria.</td></tr>`;
+            return;
+        }
+
+        historyTbody.innerHTML = "";
+        filtered.forEach(s => {
+            const tr = document.createElement("tr");
+            const tagClass = s.risk_score >= 80 ? "badge-tag danger" : (s.risk_score >= 40 ? "badge-tag" : "badge-tag safe");
+            
+            tr.innerHTML = `
+                <td style="font-family: var(--font-mono); font-size: 11px;">${s.created_at}</td>
+                <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-white);">${escapeHtml(s.sender_email || s.sender_domain || 'Unknown')}</td>
+                <td>${escapeHtml((s.subject || 'No Subject').substring(0, 36))}</td>
+                <td><span class="badge-tag">${escapeHtml(s.attack_category)}</span></td>
+                <td style="font-family: var(--font-mono); font-weight: 600;">${s.risk_score}/100</td>
+                <td><span class="${tagClass}">${escapeHtml(s.threat_level)}</span></td>
+                <td style="font-family: var(--font-mono); font-size: 11px;">${s.originating_ip || 'Internal'}</td>
+                <td><button class="btn btn-secondary btn-sm btn-inspect" data-id="${s.id}">View</button></td>
+            `;
+            historyTbody.appendChild(tr);
+        });
+
+        // Re-attach modal listeners
+        document.querySelectorAll(".btn-inspect").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const scanId = parseInt(btn.getAttribute("data-id"));
+                const scan = cachedScans.find(x => x.id === scanId);
+                if (scan) openModal(scan);
+            });
+        });
+    }
+
+    filterSearch.addEventListener("input", renderFilteredHistory);
+
+    filterPills.forEach(pill => {
+        pill.addEventListener("click", () => {
+            filterPills.forEach(p => p.classList.remove("active"));
+            pill.classList.add("active");
+            activeFilter = pill.getAttribute("data-filter");
+            renderFilteredHistory();
+        });
+    });
+
     // Load Metrics
     async function loadStats() {
         try {
@@ -239,38 +359,7 @@ Product Engineering`;
         try {
             const resp = await fetch("/api/scans");
             cachedScans = await resp.json();
-
-            if (!cachedScans || cachedScans.length === 0) {
-                historyTbody.innerHTML = `<tr><td colspan="8" class="table-empty">No records found. Run a scan above to generate audit logs.</td></tr>`;
-                return;
-            }
-
-            historyTbody.innerHTML = "";
-            cachedScans.forEach(s => {
-                const tr = document.createElement("tr");
-                const tagClass = s.risk_score >= 80 ? "badge-tag danger" : (s.risk_score >= 40 ? "badge-tag" : "badge-tag safe");
-                
-                tr.innerHTML = `
-                    <td style="font-family: var(--font-mono); font-size: 11px;">${s.created_at}</td>
-                    <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-white);">${escapeHtml(s.sender_email || s.sender_domain || 'Unknown')}</td>
-                    <td>${escapeHtml((s.subject || 'No Subject').substring(0, 36))}</td>
-                    <td><span class="badge-tag">${escapeHtml(s.attack_category)}</span></td>
-                    <td style="font-family: var(--font-mono); font-weight: 600;">${s.risk_score}/100</td>
-                    <td><span class="${tagClass}">${escapeHtml(s.threat_level)}</span></td>
-                    <td style="font-family: var(--font-mono); font-size: 11px;">${s.originating_ip || 'Internal'}</td>
-                    <td><button class="btn btn-secondary btn-sm btn-inspect" data-id="${s.id}">View</button></td>
-                `;
-                historyTbody.appendChild(tr);
-            });
-
-            // Attach row click inspector
-            document.querySelectorAll(".btn-inspect").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const scanId = parseInt(btn.getAttribute("data-id"));
-                    const scan = cachedScans.find(x => x.id === scanId);
-                    if (scan) openModal(scan);
-                });
-            });
+            renderFilteredHistory();
         } catch (e) {
             historyTbody.innerHTML = `<tr><td colspan="8" class="table-empty">Error fetching records.</td></tr>`;
         }
