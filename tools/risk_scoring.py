@@ -11,6 +11,9 @@ class SecurityAssessment(BaseModel):
     risk_score: int
     attack_category: str
     summary: str
+    sender_email: Optional[str] = None
+    sender_domain: Optional[str] = None
+    subject: Optional[str] = None
     evidence_items: List[str] = Field(default_factory=list)
     actionable_recommendations: List[str] = Field(default_factory=list)
     mitre_tactics: List[str] = Field(default_factory=list)
@@ -199,6 +202,9 @@ def generate_investigation_report(
         risk_score=score,
         attack_category=phish_res.attack_category,
         summary=summary,
+        sender_email=email.sender_email,
+        sender_domain=email.sender_domain,
+        subject=email.subject,
         evidence_items=evidence,
         actionable_recommendations=recommendations,
         mitre_tactics=mitre_tactics,
