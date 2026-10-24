@@ -84,12 +84,17 @@ def start_agent():
             MetadataContent,
             chat_protocol_spec,
         )
+        from uagents_core.contrib.protocols.chat.cards import (
+            create_card_content,
+            validate_card_payload,
+        )
     except ImportError:
-        print("[!] uagents library not installed yet. Please run:")
+        print("[!] Required libraries not installed yet. Please run:")
         print("    pip install -r requirements.txt")
         sys.exit(1)
 
     import json
+    from datetime import datetime, timezone
 
     agent_seed = os.getenv("AGENT_SEED_PHRASE") or os.getenv("AGENT_SEED", "mailsentry-ai-autonomous-security-sentinel-2026")
     mailbox_key = os.getenv("AGENT_MAILBOX_KEY", "").strip()
@@ -109,6 +114,25 @@ def start_agent():
 
     # Initialize standard Agent Chat Protocol
     chat_proto = Protocol(spec=chat_protocol_spec)
+
+    # ---------------------------------------------------------
+    # Helper to construct validated ASI:One MetadataContent block
+    # ---------------------------------------------------------
+    def make_card_block(card_dict: dict, drawer_width: int = 540) -> MetadataContent:
+        try:
+            validated = validate_card_payload("custom", card_dict)
+            return create_card_content(validated, preferred_drawer_width_px=drawer_width)
+        except Exception as e:
+            print(f"[!] Warning: Card validation error ({e}), falling back to raw metadata")
+            return MetadataContent(
+                metadata={
+                    "card_protocol_version": "1",
+                    "requires_card_interaction": "true",
+                    "card_kind": "custom",
+                    "card_payload": json.dumps(card_dict),
+                    "preferred_drawer_width_px": str(drawer_width),
+                }
+            )
 
     # ---------------------------------------------------------
     # Preset Threat Scenarios for 1-Click Interactive Demos
@@ -179,7 +203,7 @@ def start_agent():
                         "gap": 8,
                         "children": [
                             {"type": "button", "label": "🚨 Test PayPal Phishing", "primary": True, "action": {"selection": {"preset": "paypal"}}},
-                            {"type": "button", "label": "🏢 Test CEO Wire Fraud", "primary": False, "action": {"selection": {"preset": "ceo"}}}
+                            {"type": "button", "label": "🏢 Test CEO Wire Fraud", "primary": True, "action": {"selection": {"preset": "ceo"}}}
                         ]
                     },
                     {
@@ -187,8 +211,8 @@ def start_agent():
                         "direction": "row",
                         "gap": 8,
                         "children": [
-                            {"type": "button", "label": "📅 Test Safe Google Invite", "primary": False, "action": {"selection": {"preset": "safe"}}},
-                            {"type": "button", "label": "🔍 Test Typosquatting", "primary": False, "action": {"selection": {"preset": "typo"}}}
+                            {"type": "button", "label": "🔍 Test Typosquatting", "primary": True, "action": {"selection": {"preset": "typo"}}},
+                            {"type": "button", "label": "📅 Test Safe Google Invite", "primary": True, "action": {"selection": {"preset": "safe"}}}
                         ]
                     },
                     {
@@ -197,7 +221,7 @@ def start_agent():
                         "gap": 8,
                         "children": [
                             {"type": "button", "label": "📊 View SOC Dashboard", "primary": False, "action": {"selection": {"action": "view_soc"}}},
-                            {"type": "button", "label": "📋 Capabilities & Tools", "primary": False, "action": {"selection": {"action": "help"}}}
+                            {"type": "button", "label": "📋 Capabilities & Arsenal", "primary": False, "action": {"selection": {"action": "help"}}}
                         ]
                     }
                 ]
@@ -211,12 +235,17 @@ def start_agent():
         origin_ip = assessment.originating_ip or "N/A"
         origin_geo = assessment.ip_country or "Unknown Location"
         mitre_tag = assessment.mitre_tactics[0] if assessment.mitre_tactics else "T1566: Phishing"
+        s_email = assessment.sender_email or "Unknown Sender"
+        s_dom = assessment.sender_domain or "Unknown Domain"
+        subj = assessment.subject or "No Subject"
+        if len(subj) > 42:
+            subj = subj[:39] + "..."
 
         return {
             "root": {
                 "type": "section",
                 "title": f"MailSentry Forensics · {assessment.threat_level}",
-                "subtitle": f"Risk Score: {assessment.risk_score}/100 | Category: {assessment.attack_category}",
+                "subtitle": f"Risk Score: {assessment.risk_score}/100 | {assessment.attack_category}",
                 "children": [
                     {
                         "type": "badge",
@@ -225,7 +254,11 @@ def start_agent():
                     },
                     {
                         "type": "text",
-                        "value": f"Sender: {assessment.sender_email or 'Unknown'} | Domain: {assessment.sender_domain or 'Unknown'}"
+                        "value": f"Subject: {subj}"
+                    },
+                    {
+                        "type": "text",
+                        "value": f"Sender: {s_email} | Domain: {s_dom}"
                     },
                     {
                         "type": "text",
@@ -256,7 +289,7 @@ def start_agent():
                                 "action": {
                                     "selection": {
                                         "action": "quarantine",
-                                        "sender": assessment.sender_email or "unknown_threat",
+                                        "sender": s_email,
                                         "score": assessment.risk_score
                                     }
                                 }
@@ -264,11 +297,11 @@ def start_agent():
                             {
                                 "type": "button",
                                 "label": "📋 Export IOCs to SOC",
-                                "primary": False,
+                                "primary": True,
                                 "action": {
                                     "selection": {
                                         "action": "export_ioc",
-                                        "sender": assessment.sender_email or "unknown_threat"
+                                        "sender": s_email
                                     }
                                 }
                             }
@@ -305,6 +338,61 @@ def start_agent():
             }
         }
 
+    def build_quarantine_card(target_sender: str, ticket_id: str) -> dict:
+        return {
+            "root": {
+                "type": "section",
+                "title": "Zero-Trust Containment Active",
+                "subtitle": f"Incident Ticket #{ticket_id} · Mail Gateway & Firewall",
+                "children": [
+                    {
+                        "type": "badge",
+                        "label": "CONTAINMENT STATUS: ISOLATED",
+                        "variant": "success"
+                    },
+                    {
+                        "type": "text",
+                        "value": f"Hostile entity '{target_sender}' has been blacklisted across the mail transfer agent and perimeter firewall drop-list."
+                    },
+                    {
+                        "type": "text",
+                        "value": "Telemetry and forensic capture have been synced to the SOC database at http://localhost:8050.",
+                        "style": "muted"
+                    },
+                    {
+                        "type": "divider"
+                    },
+                    {
+                        "type": "group",
+                        "direction": "row",
+                        "gap": 8,
+                        "children": [
+                            {
+                                "type": "button",
+                                "label": "🔄 Test Another Scenario",
+                                "primary": True,
+                                "action": {
+                                    "selection": {
+                                        "action": "welcome"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "button",
+                                "label": "📊 Open SOC Dashboard",
+                                "primary": False,
+                                "action": {
+                                    "selection": {
+                                        "action": "view_soc"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+
     @chat_proto.on_message(ChatMessage)
     async def handle_incoming_chat(ctx: Context, sender: str, msg: ChatMessage):
         ctx.logger.info(f"Incoming message from ASI:One sender: {sender}")
@@ -328,7 +416,7 @@ def start_agent():
         except Exception:
             pass
 
-        # Check for preset selection from interactive card
+        # Check for preset selection from interactive card or natural language
         selected_preset = None
         if action_data and "preset" in action_data:
             selected_preset = action_data["preset"]
@@ -340,10 +428,6 @@ def start_agent():
             selected_preset = "safe"
         elif "typo" in incoming_text.lower() and len(incoming_text) < 40:
             selected_preset = "typo"
-
-        if selected_preset and selected_preset in PRESETS:
-            incoming_text = PRESETS[selected_preset]
-            ctx.logger.info(f"Loaded preset scenario: {selected_preset}")
 
         # Handle Quarantine CTA
         if (action_data and action_data.get("action") == "quarantine") or (incoming_text.lower() == "quarantine"):
@@ -361,18 +445,11 @@ def start_agent():
             await ctx.send(
                 sender,
                 ChatMessage(
+                    timestamp=datetime.now(timezone.utc),
                     msg_id=uuid.uuid4(),
                     content=[
                         TextContent(text=remediation_text),
-                        MetadataContent(
-                            metadata={
-                                "card_protocol_version": "1",
-                                "requires_card_interaction": "true",
-                                "card_kind": "custom",
-                                "card_payload": json.dumps(build_welcome_card()),
-                                "preferred_drawer_width_px": "540"
-                            }
-                        )
+                        make_card_block(build_quarantine_card(target_sender, ticket_id))
                     ]
                 )
             )
@@ -393,11 +470,15 @@ def start_agent():
             await ctx.send(
                 sender,
                 ChatMessage(
+                    timestamp=datetime.now(timezone.utc),
                     msg_id=uuid.uuid4(),
-                    content=[TextContent(text=ioc_text)]
+                    content=[
+                        TextContent(text=ioc_text),
+                        make_card_block(build_welcome_card())
+                    ]
                 )
             )
-            ctx.logger.info(f"Remediation action 'export_ioc' executed.")
+            ctx.logger.info("Remediation action 'export_ioc' executed.")
             return
 
         # Handle SOC Console view CTA
@@ -412,15 +493,49 @@ def start_agent():
             await ctx.send(
                 sender,
                 ChatMessage(
+                    timestamp=datetime.now(timezone.utc),
                     msg_id=uuid.uuid4(),
-                    content=[TextContent(text=soc_text)]
+                    content=[
+                        TextContent(text=soc_text),
+                        make_card_block(build_welcome_card())
+                    ]
                 )
             )
             return
 
+        # Handle specific request: "email ka report do" / "report"
+        report_requests = {"email ka report do", "report do", "email report", "give me email report", "show report", "threat report"}
+        if incoming_text.lower().strip() in report_requests or "email ka report do" in incoming_text.lower():
+            ctx.logger.info("Handling explicit 'email ka report do' request with flagship threat scenario...")
+            sample_email = PRESETS["paypal"]
+            assessment = run_investigation_pipeline(sample_email, source="asi1_report_request")
+            narration = (
+                f"🛡️ **MailSentry AI · Email Security Forensics Report**\n\n"
+                f"Here is the real-time forensic assessment for the analyzed suspicious email:\n\n"
+                f"- **Threat Level**: **{assessment.threat_level}** (Risk Score: **{assessment.risk_score}/100**)\n"
+                f"- **Attack Category**: `{assessment.attack_category}`\n"
+                f"- **Sender**: `{assessment.sender_email}` (Domain: `{assessment.sender_domain}`)\n"
+                f"- **Auth Status**: SPF `{assessment.spf_status}` · DKIM `{assessment.dkim_status}`\n"
+                f"- **MITRE ATT&CK**: `{assessment.mitre_tactics[0] if assessment.mitre_tactics else 'T1566: Phishing'}`\n\n"
+                f"👇 **Interact with the forensic card below to execute containment or export IOCs:**"
+            )
+            await ctx.send(
+                sender,
+                ChatMessage(
+                    timestamp=datetime.now(timezone.utc),
+                    msg_id=uuid.uuid4(),
+                    content=[
+                        TextContent(text=narration),
+                        make_card_block(build_forensics_card(assessment))
+                    ]
+                )
+            )
+            ctx.logger.info("Dispatched Forensic Report Card to ASI:One.")
+            return
+
         # Handle Welcome / Greeting / Help requests
-        greeting_triggers = {"hi", "hello", "hey", "start", "help", "options", "report", "email ka report do", "kya kar sakte ho", "welcome"}
-        if incoming_text.lower() in greeting_triggers or (action_data and action_data.get("action") == "welcome") or len(incoming_text) < 15:
+        greeting_triggers = {"hi", "hello", "hey", "start", "help", "options", "kya kar sakte ho", "welcome"}
+        if incoming_text.lower() in greeting_triggers or (action_data and action_data.get("action") == "welcome") or len(incoming_text) < 10:
             welcome_narration = (
                 "🛡️ **Welcome to MailSentry AI!**\n\n"
                 "I am your autonomous email threat investigation sentinel discovered via ASI:One. "
@@ -431,23 +546,21 @@ def start_agent():
             await ctx.send(
                 sender,
                 ChatMessage(
+                    timestamp=datetime.now(timezone.utc),
                     msg_id=uuid.uuid4(),
                     content=[
                         TextContent(text=welcome_narration),
-                        MetadataContent(
-                            metadata={
-                                "card_protocol_version": "1",
-                                "requires_card_interaction": "true",
-                                "card_kind": "custom",
-                                "card_payload": json.dumps(build_welcome_card()),
-                                "preferred_drawer_width_px": "540"
-                            }
-                        )
+                        make_card_block(build_welcome_card())
                     ]
                 )
             )
             ctx.logger.info("Dispatched Interactive Welcome Card to ASI:One.")
             return
+
+        # If a preset was selected, load preset text
+        if selected_preset and selected_preset in PRESETS:
+            incoming_text = PRESETS[selected_preset]
+            ctx.logger.info(f"Loaded preset scenario: {selected_preset}")
 
         # Execute investigation toolchain on email text
         ctx.logger.info("Executing 5-tool investigation pipeline...")
@@ -456,22 +569,23 @@ def start_agent():
         # Build custom forensics card matching ASI:One rich design
         forensics_card = build_forensics_card(assessment)
 
-        # Return both full Markdown narration AND ASI:One Interactive Custom Card
+        narration = (
+            f"🛡️ **MailSentry AI · Investigation Completed**\n\n"
+            f"- **Threat Verdict**: **{assessment.threat_level}** (Score: **{assessment.risk_score}/100**)\n"
+            f"- **Attack Category**: `{assessment.attack_category}`\n"
+            f"- **MITRE ATT&CK**: `{assessment.mitre_tactics[0] if assessment.mitre_tactics else 'T1566: Phishing'}`\n\n"
+            f"👇 **Select an automated containment action below:**"
+        )
+
+        # Return concise narration AND ASI:One Interactive Custom Card
         await ctx.send(
             sender,
             ChatMessage(
+                timestamp=datetime.now(timezone.utc),
                 msg_id=uuid.uuid4(),
                 content=[
-                    TextContent(text=assessment.formatted_chat_report),
-                    MetadataContent(
-                        metadata={
-                            "card_protocol_version": "1",
-                            "requires_card_interaction": "true",
-                            "card_kind": "custom",
-                            "card_payload": json.dumps(forensics_card),
-                            "preferred_drawer_width_px": "540"
-                        }
-                    )
+                    TextContent(text=narration),
+                    make_card_block(forensics_card)
                 ]
             )
         )
