@@ -393,26 +393,41 @@ def start_agent():
             }
         }
 
+    # Pre-cache preset threat assessments for instant sub-second demo responses
+    PRESET_ASSESSMENTS = {}
+    print("[*] Pre-warming forensics cache for instant response...")
+    for p_key, p_text in PRESETS.items():
+        try:
+            PRESET_ASSESSMENTS[p_key] = run_investigation_pipeline(p_text, source=f"preset_{p_key}")
+        except Exception as e:
+            print(f"[!] Failed to pre-warm {p_key}: {e}")
+    print("[*] Forensics cache pre-warmed.")
+
     @chat_proto.on_message(ChatMessage)
     async def handle_incoming_chat(ctx: Context, sender: str, msg: ChatMessage):
         ctx.logger.info(f"Incoming message from ASI:One sender: {sender}")
 
-        # Send immediate acknowledgement
-        await ctx.send(sender, ChatAcknowledgement(acknowledged_msg_id=msg.msg_id))
+        # Send immediate non-blocking acknowledgement in background (doesn't stall card reply)
+        asyncio.create_task(ctx.send(sender, ChatAcknowledgement(acknowledged_msg_id=msg.msg_id)))
 
         # Extract text content
-        incoming_text = ""
+        raw_text = ""
         for item in msg.content:
             if isinstance(item, TextContent):
-                incoming_text += item.text + "\n"
+                raw_text += item.text + "\n"
 
-        incoming_text = incoming_text.strip()
-        ctx.logger.info(f"Incoming content (length: {len(incoming_text)} chars): '{incoming_text[:60]}...'")
+        raw_text = raw_text.strip()
+        ctx.logger.info(f"Raw incoming (length: {len(raw_text)} chars): '{raw_text[:60]}...'")
+
+        # Strip any leading agent mentions like @agent1qvym... or @mailsentry_ai
+        clean_text = re.sub(r"^@agent1[a-z0-9]+\s*", "", raw_text, flags=re.IGNORECASE).strip()
+        clean_text = re.sub(r"^@\w+\s*", "", clean_text).strip()
+        ctx.logger.info(f"Clean query: '{clean_text[:60]}...'")
 
         # Parse potential interactive card action / selection JSON
         action_data = None
         try:
-            action_data = json.loads(incoming_text)
+            action_data = json.loads(clean_text)
         except Exception:
             pass
 
@@ -420,17 +435,17 @@ def start_agent():
         selected_preset = None
         if action_data and "preset" in action_data:
             selected_preset = action_data["preset"]
-        elif "paypal" in incoming_text.lower() and len(incoming_text) < 40:
+        elif "paypal" in clean_text.lower() and len(clean_text) < 40:
             selected_preset = "paypal"
-        elif "ceo" in incoming_text.lower() and len(incoming_text) < 40:
+        elif "ceo" in clean_text.lower() and len(clean_text) < 40:
             selected_preset = "ceo"
-        elif "safe" in incoming_text.lower() and len(incoming_text) < 40:
+        elif "safe" in clean_text.lower() and len(clean_text) < 40:
             selected_preset = "safe"
-        elif "typo" in incoming_text.lower() and len(incoming_text) < 40:
+        elif "typo" in clean_text.lower() and len(clean_text) < 40:
             selected_preset = "typo"
 
         # Handle Quarantine CTA
-        if (action_data and action_data.get("action") == "quarantine") or (incoming_text.lower() == "quarantine"):
+        if (action_data and action_data.get("action") == "quarantine") or (clean_text.lower() == "quarantine"):
             target_sender = (action_data.get("sender") if action_data else None) or "Flagged Threat Actor"
             ticket_id = f"SEC-{uuid.uuid4().hex[:6].upper()}"
             remediation_text = (
@@ -457,7 +472,7 @@ def start_agent():
             return
 
         # Handle IOC Export CTA
-        if (action_data and action_data.get("action") == "export_ioc") or (incoming_text.lower() == "export_ioc"):
+        if (action_data and action_data.get("action") == "export_ioc") or (clean_text.lower() == "export_ioc"):
             target_sender = (action_data.get("sender") if action_data else None) or "Analyzed Email"
             ioc_text = (
                 f"📋 **INDICATORS OF COMPROMISE (IOC) EXPORTED**\n\n"
@@ -482,7 +497,7 @@ def start_agent():
             return
 
         # Handle SOC Console view CTA
-        if (action_data and action_data.get("action") == "view_soc") or ("view_soc" in incoming_text.lower()):
+        if (action_data and action_data.get("action") == "view_soc") or ("view_soc" in clean_text.lower()):
             soc_text = (
                 f"📊 **ENTERPRISE SOC CONSOLE STATUS**\n\n"
                 f"- **Web Console**: Running at `http://localhost:8050`\n"
@@ -503,12 +518,19 @@ def start_agent():
             )
             return
 
-        # Handle specific request: "email ka report do" / "report"
-        report_requests = {"email ka report do", "report do", "email report", "give me email report", "show report", "threat report"}
-        if incoming_text.lower().strip() in report_requests or "email ka report do" in incoming_text.lower():
-            ctx.logger.info("Handling explicit 'email ka report do' request with flagship threat scenario...")
-            sample_email = PRESETS["paypal"]
-            assessment = run_investigation_pipeline(sample_email, source="asi1_report_request")
+        # Handle specific request: "email ka report do" / "report" / "scan" (Instant Pre-Warmed Response)
+        is_report_request = (
+            "report" in clean_text.lower()
+            or "email ka report" in clean_text.lower()
+            or "email report" in clean_text.lower()
+            or "scan" in clean_text.lower()
+            or "threat" in clean_text.lower()
+        ) and len(clean_text) < 60
+
+        if is_report_request or selected_preset:
+            chosen = selected_preset or "paypal"
+            ctx.logger.info(f"Instant dispatch for '{chosen}' forensic report card...")
+            assessment = PRESET_ASSESSMENTS.get(chosen) or run_investigation_pipeline(PRESETS.get(chosen, PRESETS["paypal"]))
             narration = (
                 f"🛡️ **MailSentry AI · Email Security Forensics Report**\n\n"
                 f"Here is the real-time forensic assessment for the analyzed suspicious email:\n\n"
@@ -530,12 +552,12 @@ def start_agent():
                     ]
                 )
             )
-            ctx.logger.info("Dispatched Forensic Report Card to ASI:One.")
+            ctx.logger.info("Dispatched Forensic Report Card to ASI:One instantly.")
             return
 
         # Handle Welcome / Greeting / Help requests
         greeting_triggers = {"hi", "hello", "hey", "start", "help", "options", "kya kar sakte ho", "welcome"}
-        if incoming_text.lower() in greeting_triggers or (action_data and action_data.get("action") == "welcome") or len(incoming_text) < 10:
+        if clean_text.lower() in greeting_triggers or (action_data and action_data.get("action") == "welcome") or len(clean_text) < 8:
             welcome_narration = (
                 "🛡️ **Welcome to MailSentry AI!**\n\n"
                 "I am your autonomous email threat investigation sentinel discovered via ASI:One. "
@@ -557,14 +579,9 @@ def start_agent():
             ctx.logger.info("Dispatched Interactive Welcome Card to ASI:One.")
             return
 
-        # If a preset was selected, load preset text
-        if selected_preset and selected_preset in PRESETS:
-            incoming_text = PRESETS[selected_preset]
-            ctx.logger.info(f"Loaded preset scenario: {selected_preset}")
-
-        # Execute investigation toolchain on email text
-        ctx.logger.info("Executing 5-tool investigation pipeline...")
-        assessment = run_investigation_pipeline(incoming_text)
+        # Execute investigation toolchain on arbitrary raw email text
+        ctx.logger.info("Executing 5-tool investigation pipeline on raw input...")
+        assessment = run_investigation_pipeline(clean_text)
 
         # Build custom forensics card matching ASI:One rich design
         forensics_card = build_forensics_card(assessment)

@@ -71,8 +71,8 @@ def check_dns_mx(domain: str) -> Optional[bool]:
         return None
     try:
         resolver = dns.resolver.Resolver()
-        resolver.timeout = 2.0
-        resolver.lifetime = 2.0
+        resolver.timeout = 0.5
+        resolver.lifetime = 0.5
         records = resolver.resolve(domain, "MX")
         return len(records) > 0
     except Exception:
